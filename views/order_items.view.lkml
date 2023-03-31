@@ -72,6 +72,10 @@ view: order_items {
 
   measure: average_sale_price {
     type: average
+    link: {
+      label: "other Dashboard"
+      url: "google.com"
+    }
     sql: ${sale_price} ;;
   }
 
