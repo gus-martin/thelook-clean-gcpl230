@@ -83,4 +83,26 @@ view: order_items {
     type: count
     drill_fields: [id, orders.id, inventory_items.id]
   }
+
+  measure: total_sale_price2 {
+    type: sum
+    sql: ${sale_price} ;;
+    drill_fields: [total_sale_price,id]
+    required_fields: [users.age, id]
+
+    html:
+    {% if value > 800 %}
+      <span style="color:darkgreen;">{{ rendered_value }}</span>
+    {% else %}
+      <span style="color:darkred;">{{ rendered_value }}</span>
+    {% endif %} ;;
+
+
+    link: {
+      label: "Load Explore"
+      url: "/explore/thelook-clean/order_items?fields=orders.created_month,users.age,orders.id,orders.status&f[users.age]={{ users.age._rendered_value }}&sorts=orders.created_month+desc&limit=500"
+
+      }
+
+  }
 }
