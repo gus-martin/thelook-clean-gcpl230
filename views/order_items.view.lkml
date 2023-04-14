@@ -84,11 +84,18 @@ view: order_items {
     drill_fields: [id, orders.id, inventory_items.id]
   }
 
+  measure: link_generator {
+    hidden: no
+    type: number
+    sql: 1 ;;
+    drill_fields: [link_generator]
+  }
+
   measure: total_sale_price2 {
     type: sum
-    sql: ${sale_price} ;;
-    drill_fields: [total_sale_price,id]
-    required_fields: [users.age, id]
+    sql: ${sale_price};;
+    drill_fields: [my_set*]
+    required_fields: [users.age]
 
     html:
     {% if value > 800 %}
@@ -97,12 +104,14 @@ view: order_items {
       <span style="color:darkred;">{{ rendered_value }}</span>
     {% endif %} ;;
 
-
     link: {
       label: "Load Explore"
       url: "/explore/thelook-clean/order_items?fields=orders.created_month,users.age,orders.id,orders.status&f[users.age]={{ users.age._rendered_value }}&sorts=orders.created_month+desc&limit=500"
-
       }
-
   }
+
+  set: my_set {
+    fields: [total_sale_price, id]
+  }
+
 }
