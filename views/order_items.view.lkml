@@ -85,10 +85,41 @@ view: order_items {
   }
 
   measure: link_generator {
-    hidden: no
+    hidden: yes
     type: number
     sql: 1 ;;
     drill_fields: [link_generator]
+  }
+
+  dimension: is_completed_sale{
+    type: yesno
+    sql: ${sale_price}>2 ;;
+  }
+
+  measure: total_sale_price_3 {
+    type: sum
+    sql: ${sale_price} ;;
+    value_format_name: "usd"
+    #drill_fields: [order_details_drill*]
+
+    filters: {
+      field: is_completed_sale
+      value: "yes"
+    }
+
+    link: {
+      label: "Show Event Summary"
+      url: "
+      @{generate_link_variable_defaults}
+      {% assign link = link_generator._link %}
+      {% assign filters_mapping = 'order_items.created_date|users.age' %}
+      {% assign drill_fields = 'orders.created_month,orders.id,users.age,users.id,users.name,orders.status,orders.order_amount' %}
+      {% assign different_explore = false %}
+      {% assign target_model = 'thelook-clean' %}
+      {% assign target_explore = 'order_items' %}
+      @{generate_explore_link}
+      "
+    }
   }
 
   measure: total_sale_price2 {
