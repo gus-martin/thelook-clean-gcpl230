@@ -4,7 +4,7 @@ project_name: "thelook-clean"
 
 constant: host {
   #Could assign a user_attribute since it won't be used with the generator
-  value: "{% assign host = 'https://yourinstance.cloud.looker.com' %}"
+  value: "{% assign host = 'https://gcpl230.cloud.looker.com' %}"
 }
 
 constant: generate_link_variable_defaults {
@@ -16,15 +16,21 @@ constant: generate_link_variable_defaults {
   {% assign pivots = '' %}
   {% assign subtotals = '' %}
   {% assign sorts = '' %}
-  {% assign limit = '500' %}
-  {% assign column_limit = '50' %}
+  {% assign sorts_desc = '' %}
+  {% assign limit = '' %}
+  {% assign hidden_fields = '' %}
+  {% assign build_hidden_fields = '' %}
+  {% assign filters_string = '' %}
+
+
+  {% assign column_limit = '' %}
   {% assign total = '' %}
   {% assign row_total = '' %}
   {% assign query_timezone = '' %}
   {% assign dynamic_fields = '' %}
 
   {% comment %} Default Visualizations Parameters {% endcomment %}
-  @{table}
+  {% comment %}@{table} {% endcomment %}
 
   {% comment %} Default Behavior Parameters {% endcomment %}
   {% assign default_filters_override = false %}
@@ -50,24 +56,24 @@ constant: extract_link_context {
   {% assign parameter_value = parameter | split:'=' | last %}
   {% assign parameter_test = parameter_key | slice: 0,2 %}
   {% if parameter_test == 'f[' %} {% comment %} Link contains multiple parameters, need to test if filter {% endcomment %}
-  {% if parameter_key != parameter_value %} {% comment %} Tests if the filter value is is filled in, if not it skips  {% endcomment %}
-  {% assign parameter_key_size = parameter_key | size %}
-  {% assign slice_start = 2 %}
-  {% assign slice_end = parameter_key_size | minus: slice_start | minus: 1 %}
-  {% assign parameter_key = parameter_key | slice: slice_start, slice_end %}
-  {% assign parameter_clean = parameter_key | append:'|' |append: parameter_value %}
-  {% assign filters_array =  filters_array | append: parameter_clean | append: ',' %}
-  {% endif %}
-  {% elsif parameter_key == 'dynamic_fields' %}
-  {% assign dynamic_fields = parameter_value %}
-  {% elsif parameter_key == 'query_timezone' %}
-  {% assign query_timezone = parameter_value %}
-  {% endif %}
-  {% endfor %}
-  {% assign size = filters_array | size | minus: 1 %}
-  {% if size > 0 %}
-  {% assign filters_array = filters_array | slice: 0, size %}
-  {% endif %}
+      {% if parameter_key != parameter_value %} {% comment %} Tests if the filter value is is filled in, if not it skips  {% endcomment %}
+      {% assign parameter_key_size = parameter_key | size %}
+      {% assign slice_start = 2 %}
+      {% assign slice_end = parameter_key_size | minus: slice_start | minus: 1 %}
+      {% assign parameter_key = parameter_key | slice: slice_start, slice_end %}
+      {% assign parameter_clean = parameter_key | append:'|' |append: parameter_value %}
+      {% assign filters_array =  filters_array | append: parameter_clean | append: ',' %}
+      {% endif %}
+      {% elsif parameter_key == 'dynamic_fields' %}
+      {% assign dynamic_fields = parameter_value %}
+      {% elsif parameter_key == 'query_timezone' %}
+      {% assign query_timezone = parameter_value %}
+      {% endif %}
+      {% endfor %}
+      {% assign size = filters_array | size | minus: 1 %}
+      {% if size > 0 %}
+      {% assign filters_array = filters_array | slice: 0, size %}
+      {% endif %}
   "
 }
 
@@ -229,7 +235,13 @@ constant: generate_dashboard_link {
   {% endif %}
 
   @{extract_link_context}
+
+  {% if different_explore %}
   @{match_filters_to_destination}
+  {% else %}
+  {% assign filters_array_destination = filters_string %}
+  {% endif %}
+
   @{build_filter_string}
 
   {% if default_filters != '' %}
@@ -237,15 +249,16 @@ constant: generate_dashboard_link {
   {% endif %}
 
   {% if default_filters_override == true and default_filters != '' %}
-  {% assign target_content_filters = default_filter_string | append:'&' | append: filter_string %}
+  {% assign target_content_filters = filter_string | append:'&' | append: default_filter_string | prepend:'&' %}
   {% elsif default_filters_override == false and default_filters != '' %}
-  {% assign target_content_filters = filter_string | append:'&' | append: default_filter_string %}
+  {% assign target_content_filters = default_filter_string | append:'&' | append: filter_string | prepend:'&' %}
   {% else %}
-  {% assign target_content_filters = filter_string %}
+  {% assign target_content_filters = filter_string | prepend:'&' %}
   {% endif %}
 
   {% comment %} Builds final link to be presented in frontend {% endcomment %}
-  {{ host | append:content | append:target_dashboard | append: '?' | append: target_content_filters }}
+  @{build_explore_link}
+  {{explore_link}}
   "
 }
 
@@ -267,12 +280,14 @@ constant: generate_explore_link {
   @{host}
   {% endif %}
 
+  @{vis_config}
+
   @{extract_link_context}
 
   {% if different_explore %}
   @{match_filters_to_destination}
   {% else %}
-  {% assign filters_array_destination = filters_array %}
+  {% assign filters_array_destination = filters_string %}
   {% endif %}
 
   @{build_filter_string}
@@ -292,6 +307,22 @@ constant: generate_explore_link {
   {% comment %} Builds final link to be presented in frontend {% endcomment %}
   @{build_explore_link}
   {{explore_link}}
+  "
+}
+
+constant: vis_config {
+  value: "
+  {% assign vis_config = '{\"type\":\"looker_grid\",' | prepend: '&vis_config=' %}
+  {% assign hidden_fields = hidden_fields | split: ',' %}
+
+  {% assign build_hidden_fields = '\"hidden_fields\":[\"'  %}
+
+  {% assign hidden_fields = hidden_fields | join: '\",\"' %}
+  {% assign build_hidden_fields = build_hidden_fields | append: hidden_fields %}
+
+  {% assign build_hidden_fields = build_hidden_fields |  append:'\"]}' %}
+
+  {% assign vis_config = vis_config | append: build_hidden_fields  %}
   "
 }
 

@@ -3,7 +3,7 @@ view: order_items {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
   sql_table_name: demo_db.order_items ;;
-  drill_fields: [id]
+  #drill_fields: [id]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
 
@@ -96,10 +96,13 @@ view: order_items {
     sql: ${sale_price}>2 ;;
   }
 
+
+
   measure: total_sale_price_3 {
     type: sum
+    label: "Total Sale Price 3"
     sql: ${sale_price} ;;
-    value_format_name: "usd"
+    #value_format_name: "usd"
     #drill_fields: [order_details_drill*]
 
     filters: {
@@ -108,13 +111,12 @@ view: order_items {
     }
 
     link: {
-      label: "Show Event Summary"
+      label: "Details"
+      # {% assign filters_mapping = 'order_items.created_date|users.age' %}
       url: "
       @{generate_link_variable_defaults}
       {% assign link = link_generator._link %}
-      {% assign filters_mapping = 'order_items.created_date|users.age' %}
-      {% assign drill_fields = 'orders.created_month,orders.id,users.age,users.id,users.name,orders.status,orders.order_amount' %}
-      {% assign different_explore = false %}
+      {% assign drill_fields = 'orders.created_month,orders.id,users.age, order_items.sale_price,orders.order_amount' %}
       {% assign target_model = 'thelook-clean' %}
       {% assign target_explore = 'order_items' %}
       @{generate_explore_link}
