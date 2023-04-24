@@ -116,7 +116,7 @@ view: order_items {
       url: "
       @{generate_link_variable_defaults}
       {% assign link = link_generator._link %}
-      {% assign drill_fields = 'orders.created_month,orders.id,users.age, order_items.sale_price,orders.order_amount' %}
+      {% assign drill_fields = 'users.age, users.country' %}
       {% assign target_model = 'thelook-clean' %}
       {% assign target_explore = 'order_items' %}
       @{generate_explore_link}

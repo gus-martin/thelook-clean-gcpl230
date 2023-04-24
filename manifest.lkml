@@ -1,6 +1,19 @@
-project_name: "thelook-clean"
 
-##Link Automation
+# project_name: "elead-reporting"
+
+# # Use local_dependency: To enable referencing of another project
+# # on this instance with include: statements
+# visualization: {
+#   id: "npv_radial_gauge_v2"
+#   label: "NPV Radial Gauge"
+#   file: "visualizations/radialgauge_v2.js"
+# }
+
+# visualization: {
+#   id: "npv_bar_gauge_v2"
+#   label: "NPV Bar Gauge"
+#   file: "visualizations/bargauge.js"
+# }
 
 constant: host {
   #Could assign a user_attribute since it won't be used with the generator
@@ -30,13 +43,12 @@ constant: generate_link_variable_defaults {
   {% assign dynamic_fields = '' %}
 
   {% comment %} Default Visualizations Parameters {% endcomment %}
-  {% comment %}@{table} {% endcomment %}
 
   {% comment %} Default Behavior Parameters {% endcomment %}
   {% assign default_filters_override = false %}
   {% assign default_filters = '' %}
   {% assign new_page = false %}
-  {% assign different_explore = false %}
+  {% assign different_explore = true %}
   {% assign target_model = '' %}
   {% assign target_explore = '' %}
 
@@ -56,24 +68,24 @@ constant: extract_link_context {
   {% assign parameter_value = parameter | split:'=' | last %}
   {% assign parameter_test = parameter_key | slice: 0,2 %}
   {% if parameter_test == 'f[' %} {% comment %} Link contains multiple parameters, need to test if filter {% endcomment %}
-      {% if parameter_key != parameter_value %} {% comment %} Tests if the filter value is is filled in, if not it skips  {% endcomment %}
-      {% assign parameter_key_size = parameter_key | size %}
-      {% assign slice_start = 2 %}
-      {% assign slice_end = parameter_key_size | minus: slice_start | minus: 1 %}
-      {% assign parameter_key = parameter_key | slice: slice_start, slice_end %}
-      {% assign parameter_clean = parameter_key | append:'|' |append: parameter_value %}
-      {% assign filters_array =  filters_array | append: parameter_clean | append: ',' %}
-      {% endif %}
-      {% elsif parameter_key == 'dynamic_fields' %}
-      {% assign dynamic_fields = parameter_value %}
-      {% elsif parameter_key == 'query_timezone' %}
-      {% assign query_timezone = parameter_value %}
-      {% endif %}
-      {% endfor %}
-      {% assign size = filters_array | size | minus: 1 %}
-      {% if size > 0 %}
-      {% assign filters_array = filters_array | slice: 0, size %}
-      {% endif %}
+  {% if parameter_key != parameter_value %} {% comment %} Tests if the filter value is is filled in, if not it skips  {% endcomment %}
+  {% assign parameter_key_size = parameter_key | size %}
+  {% assign slice_start = 2 %}
+  {% assign slice_end = parameter_key_size | minus: slice_start | minus: 1 %}
+  {% assign parameter_key = parameter_key | slice: slice_start, slice_end %}
+  {% assign parameter_clean = parameter_key | append:'|' |append: parameter_value %}
+  {% assign filters_array =  filters_array | append: parameter_clean | append: ',' %}
+  {% endif %}
+  {% elsif parameter_key == 'dynamic_fields' %}
+  {% assign dynamic_fields = parameter_value %}
+  {% elsif parameter_key == 'query_timezone' %}
+  {% assign query_timezone = parameter_value %}
+  {% endif %}
+  {% endfor %}
+  {% assign size = filters_array | size | minus: 1 %}
+  {% if size > 0 %}
+  {% assign filters_array = filters_array | slice: 0, size %}
+  {% endif %}
   "
 }
 
@@ -128,6 +140,7 @@ constant: build_filter_string {
   {% endif %}
   "
 }
+
 
 constant: build_default_filter_string {
   value: "
@@ -222,46 +235,6 @@ constant: build_explore_link {
   "
 }
 
-constant: generate_dashboard_link {
-  value: "
-  {% assign content = '/dashboards-next/' %}
-  {% assign link_query = link | split: '?' | last %}
-  {% assign link_query_parameters = link_query | split: '&' %}
-  {% assign target_content_filters = '' %}
-  {% assign host = '' %}
-
-  {% if new_page %}
-  @{host}
-  {% endif %}
-
-  @{extract_link_context}
-
-  {% if different_explore %}
-  @{match_filters_to_destination}
-  {% else %}
-  {% assign filters_array_destination = filters_string %}
-  {% endif %}
-
-  @{build_filter_string}
-
-  {% if default_filters != '' %}
-  @{build_default_filter_string}
-  {% endif %}
-
-  {% if default_filters_override == true and default_filters != '' %}
-  {% assign target_content_filters = filter_string | append:'&' | append: default_filter_string | prepend:'&' %}
-  {% elsif default_filters_override == false and default_filters != '' %}
-  {% assign target_content_filters = default_filter_string | append:'&' | append: filter_string | prepend:'&' %}
-  {% else %}
-  {% assign target_content_filters = filter_string | prepend:'&' %}
-  {% endif %}
-
-  {% comment %} Builds final link to be presented in frontend {% endcomment %}
-  @{build_explore_link}
-  {{explore_link}}
-  "
-}
-
 constant: generate_explore_link {
   value: "
   {% assign content = '/explore/' %}
@@ -326,52 +299,34 @@ constant: vis_config {
   "
 }
 
-
-##End of Link Generation
-
-
-##Default Visualizations
-
-constant: line_chart_1_date_1_measure {
-  #Required
-  #measure
-  value: "{% assign vis_config = '{\"point_style\":\"circle\",\"series_colors\":{\"' | append: measure | append: '\":\"#CE642D\"},\"type\":\"looker_line\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_advisor_stores_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.comparison_advisor|dim_eis.store_name,fact.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: table {
-  value: "{% assign vis_config = '{\"type\":\"looker_grid\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_advisor_service_summary_filter_mapping {
+  value: "{% assign filters_mapping = 'dim_eis.store_name,fact.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: table_no_cell_viz {
-  value: "{% assign vis_config = '{\"type\":\"looker_grid\",\"series_cell_visualizations\":{}}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_advisor_emp_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.comparison_advisor|dim_employee.emp_name,fact.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: column {
-  value: "{% assign vis_config = '{\"type\":\"looker_column\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_asr_store_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.compare_asr_dim|dim_eis.store_name,dim_eis.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: bar {
-  value: "{% assign vis_config = '{\"type\":\"looker_bar\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_asr_advisor_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.compare_asr_dim|dim_employee.emp_name,dim_eis.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: area {
-  value: "{% assign vis_config = '{\"type\":\"looker_area\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_asr_labortype_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.compare_asr_dim|advisor.labor_type_formatted,dim_eis.store_id|advisor.store_id,fact.date_selector|advisor.ro_close_date,fact.labor_type|advisor.selected_labor_type,dim_employee.emp_name|dim_employee.emp_name' %}"
 }
 
-constant: line {
-  value: "{% assign vis_config = '{\"type\":\"looker_line\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_technician_stores_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.comparison_technician|dim_eis.store_name,fact.store_id|technician.store_id,fact.date_selector|technician.ro_close_date,dim_employee.emp_name|dim_employee.emp_name,fact.labor_type|technician.selected_labor_type' %}"
 }
 
-constant: map {
-  value: "{% assign vis_config = '{\"type\":\"looker_map\"}' | url_encode | prepend: '&vis_config=' %}"
+constant: fact_technician_emp_filter_mapping {
+  value: "{% assign filters_mapping = 'fact.comparison_technician|dim_employee.emp_name,fact.store_id|technician.store_id,fact.date_selector|technician.ro_close_date,dim_employee.emp_name|dim_employee.emp_name,fact.labor_type|technician.selected_labor_type' %}"
 }
-
-constant: pie {
-  value: "{% assign vis_config = '{\"type\":\"looker_pie\"}' | url_encode | prepend: '&vis_config=' %}"
-}
-
-constant: single {
-  value: "{% assign vis_config = '{\"type\":\"single_value\"}' | url_encode | prepend: '&vis_config=' %}"
-}
-
-##End of Default Visualizations
